@@ -1,4 +1,17 @@
+// models/course.js
 import mongoose, { Schema } from "mongoose";
+
+// Define the embedded Student schema for Course
+const embeddedStudentSchema = new Schema({
+    sname: {
+        type: String,
+        required: true,
+    },
+    age: {
+        type: Number,
+        required: true,
+    },
+}); 
 
 // Define the Course schema
 const courseSchema = new Schema({
@@ -7,10 +20,15 @@ const courseSchema = new Schema({
         required: true,
     },
     detail: {
-        type: String,  // Assuming 'detail' is a text description
+        type: String,
         required: true,
     },
+    members: {
+        type: [embeddedStudentSchema],
+        required: false,
+    },
+}, {
+    timestamps: true, 
 });
 
-// Export the Course schema (not the model)
-export const CourseSchema = courseSchema;
+export const Course = mongoose.models.Course || mongoose.model("Course", courseSchema);

@@ -13,9 +13,7 @@ export async function POST(request) {
         qty,
         price
     })
-
     return NextResponse.json({msg: "Create Product success"}, {status: 200})
-
 }
 
 

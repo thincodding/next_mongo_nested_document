@@ -1,34 +1,46 @@
 import { NextResponse } from "next/server";
-import connectDB from "../../../config/db";
-import { Student } from "../../../models/student";
+import connectDB from "../../../config/db"; // Ensure this is the correct path for your DB connection
+import { Course } from "../../../models/couse"; // Import the Course model
 
 
-// nexted document
 export async function POST(request) {
     try {
         // Connect to the database
         await connectDB();
-        
-        // Extract the body data from the request
-        const body = await request.json();
-        const { sname, age, course } = body;
 
-        // Check if the required fields are present
-        if (!sname || !age || !course) {
-            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+        const body = await request.json();
+     
+
+        const { students, course } = body;
+
+        // Validate required fields
+        if (!students || !Array.isArray(students) || students.length === 0 || !course) {
+            return NextResponse.json({ error: "Missing required fields or invalid student format" }, { status: 400 });
         }
 
-        // Create the student with the extracted data
-        const student = await Student.create({
-            sname,
-            age,
-            course,  // Assuming 'course' is an array of objects matching the Course schema
-        });
+        // Fetch the course by ID
+        const courseDoc = await Course.findById(course);
+        if (!courseDoc) {
+            return NextResponse.json({ error: "Course ID is invalid" }, { status: 400 });
+        }
+
+        // Generate an array of student objects with new ObjectId
+        const studentDocuments = students.map(student => ({
+            sname: student.sname,              
+            age: student.age                    
+        }));
+
+        console.log("Generated Student Documents:", studentDocuments); // Log the generated documents
+
+        await Course.updateOne(
+            { _id: course }, // Find the course by its ID
+            { $push: { members: { $each: studentDocuments } } } // Push new students into the members array
+        );
 
         // Return success response
-        return NextResponse.json({ msg: "Create Student success", student }, { status: 201 });
+        return NextResponse.json({ msg: "Students added to course successfully" }, { status: 201 });
     } catch (error) {
-        // Handle any errors during the creation process
+        console.error("Error occurred:", error); // Log the full error
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
@@ -39,7 +51,7 @@ export async function GET() {
     try {
 
         await connectDB();
-        const students = await Student.find();
+        const students = await Course.find();
         return NextResponse.json(students, { status: 200 });
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
